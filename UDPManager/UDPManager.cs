@@ -103,7 +103,7 @@ namespace kevincastejon
         /// <param name='localPort'>The local port to bind to, you can specify a port from 1 to 65535, 0  will bind to the first available port. Default is 0.</param><c>!Any other value will throw an exception!</c>
         public void Bind(int localPort)
         {
-            this.Reset(false);
+            this.Close(false);
             IPAddress ownAddress = IPAddress.Parse("0.0.0.0");
             IPEndPoint myEP = new IPEndPoint(ownAddress, localPort);
             _UDPSocketIPv4 = new UdpClient(myEP);
@@ -254,7 +254,7 @@ namespace kevincastejon
         /// Unbind from the localport</summary>
         /// <param name='removeChannels'>Remove all the added UDPChannels, true by default
         /// </param>
-        public void Reset(bool removeChannels = true)
+        public void Close(bool removeChannels = true)
         {
             this._bound = false;
             if (this._UDPSocketIPv4 != null)
@@ -278,7 +278,7 @@ namespace kevincastejon
         {
             foreach (UDPManager udpm in UDPmanagers)
             {
-                udpm.Reset(removeChannels);
+                udpm.Close(removeChannels);
             }
         }
         /// <summary>

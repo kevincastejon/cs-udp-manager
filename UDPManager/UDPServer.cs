@@ -261,7 +261,7 @@ namespace kevincastejon
             _peers = new List<UDPPeer>();
             _udpManager._udpServerPeers = new List<UDPPeer>();
             _udpManager._CloseHiddenChannels();
-            _udpManager.Reset(removeChannels);
+            _udpManager.Close(removeChannels);
         }
         /// <summary>
         /// True if the instance is bound to a port</summary>

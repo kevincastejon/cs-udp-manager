@@ -221,7 +221,7 @@ namespace kevincastejon
             if (this._udpServer != null) this._udpServer.Close();
             this._udpServer = null;
             if (removeChannels) this._udpManager._CloseHiddenChannels();
-            this._udpManager.Reset(removeChannels);
+            this._udpManager.Close(removeChannels);
         }
         /// <summary>
         /// True if the instance is bound to a port</summary>
