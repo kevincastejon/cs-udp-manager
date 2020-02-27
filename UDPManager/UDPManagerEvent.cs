@@ -18,6 +18,7 @@
         /// <summary>
         /// An enum containing all the names of the UDPManager events
         /// </summary>
+        #pragma warning disable 108
         public enum Names { BOUND, DATA_RECEIVED, DATA_SENT, DATA_DELIVERED, DATA_RETRIED, DATA_CANCELED };
         internal const string _SEND_DATA = "sendData";
         private UDPDataInfo _udpDataInfo;

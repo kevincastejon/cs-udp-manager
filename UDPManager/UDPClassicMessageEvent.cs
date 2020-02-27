@@ -14,6 +14,7 @@ namespace kevincastejon
         /// <summary>
         /// An enum containing all the names of the UDPManager events
         /// </summary>
+        #pragma warning disable 108
         public enum Names { MESSAGE };
         /// <summary>
         /// constructor

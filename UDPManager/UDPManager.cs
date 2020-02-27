@@ -86,6 +86,7 @@ namespace kevincastejon
         private UDPChannel _pingChannel = null;         //Implemented for UDPServer
         private UDPChannel _connectionChannel = null;   //and UDPClient
         private static List<UDPManager> UDPmanagers = new List<UDPManager>();
+        private static readonly object locker = new object();
 
         /// <summary>
         /// constructor </summary>
@@ -414,102 +415,101 @@ namespace kevincastejon
 
         private void _ReceiveDataHandler(IAsyncResult ar)
         {
-
-            IPEndPoint receivedIpEndPoint = new IPEndPoint(IPAddress.Any, 0);
-            Byte[] receiveBytes;
-            string receivedString;
-
-            try
+            lock (locker)
             {
 
-                receiveBytes = _UDPSocketIPv4.EndReceive(ar, ref receivedIpEndPoint);
-
-            }
-            catch (Exception e)
-            {
-                if (_UDPSocketIPv4 != null)
-                    _UDPSocketIPv4.BeginReceive(new AsyncCallback(_ReceiveDataHandler), new object());
-                return;
-            }
-            _UDPSocketIPv4.BeginReceive(new AsyncCallback(_ReceiveDataHandler), new object());
-            receivedString = ASCIIEncoding.ASCII.GetString(receiveBytes);
-            dynamic udpData;
-            try
-            {
-                udpData = JsonConvert.DeserializeObject(receivedString);
-            }
-            catch (NullReferenceException e)
-            {
-
-                this.DispatchEvent(new UDPClassicMessageEvent(UDPClassicMessageEvent.Names.MESSAGE, receivedString, receivedIpEndPoint));
-                return;
-            }
-            int ID = 0;
-            if (udpData["UDPMSID"] != null && udpData["UDPMCN"] != null && udpData["UDPMRA"] != null)
-            {
-
-                ID = udpData["UDPMSID"];
-                //console.log("RECEIVED : ",udpData.UDPMCN,udpData.data.type,e.srcAddress, e.srcPort);
-                bool boool = true;
-                if (this._whiteListEnabled)
+                IPEndPoint receivedIpEndPoint = new IPEndPoint(IPAddress.Any, 0);
+                Byte[] receiveBytes;
+                string receivedString;
+                #pragma warning disable 168
+                try
                 {
-                    if (this._whiteList.IndexOf(receivedIpEndPoint.Address.ToString()) == -1)
-                        boool = false;
+
+                    receiveBytes = _UDPSocketIPv4.EndReceive(ar, ref receivedIpEndPoint);
+
                 }
-                else if (this._blackListEnabled)
+                catch (Exception e)
                 {
-                    if (this._blackList.IndexOf(receivedIpEndPoint.Address.ToString()) > -1)
-                        boool = false;
+                    if (_UDPSocketIPv4 != null)
+                        _UDPSocketIPv4.BeginReceive(new AsyncCallback(_ReceiveDataHandler), new object());
+                    return;
                 }
-                
-                if (this._UDPClientConnecting != null && receivedIpEndPoint.Address.ToString() == this._UDPClientConnecting.Address && receivedIpEndPoint.Port.ToString() == this._UDPClientConnecting.ToString() && udpData["UDPMCN"] != "UDPMRCC") boool = false;
-                if (udpData["UDPMCN"].ToString() == "UDPMRCP" && this._udpServerPeers != null && this._udpServerPeers.Where(a => a.Address == receivedIpEndPoint.Address.ToString()).Where(a => a.Port == receivedIpEndPoint.Port).FirstOrDefault() == null) boool = false;
-
-                if (boool)
+                _UDPSocketIPv4.BeginReceive(new AsyncCallback(_ReceiveDataHandler), new object());
+                receivedString = ASCIIEncoding.ASCII.GetString(receiveBytes);
+                dynamic udpData;
+                try
+                {
+                    udpData = JsonConvert.DeserializeObject(receivedString);
+                }
+                catch (NullReferenceException e)
                 {
 
-                    if (this._receivedIDs.IndexOf(receivedIpEndPoint.Address.ToString() + ":" + receivedIpEndPoint.Port.ToString() + "," + ID) == -1)
+                    this.DispatchEvent(new UDPClassicMessageEvent(UDPClassicMessageEvent.Names.MESSAGE, receivedString, receivedIpEndPoint));
+                    return;
+                }
+                #pragma warning restore 168
+                int ID = 0;
+                if (udpData["UDPMSID"] != null && udpData["UDPMCN"] != null && udpData["UDPMRA"] != null)
+                {
+
+                    ID = int.Parse(udpData["UDPMSID"].ToString());
+
+                    bool boool = true;
+                    if (this._whiteListEnabled)
                     {
-                        this._receivedIDs.Add(receivedIpEndPoint.Address.ToString() + ":" + receivedIpEndPoint.Port.ToString() + "," + ID);
-                        if (this._receivedIDs.Count == 999) this._receivedIDs.RemoveAt(0);
-                        this.DispatchEvent(new UDPManagerEvent(UDPManagerEvent.Names.DATA_RECEIVED, new UDPDataInfo(udpData["UDPMCN"].ToString(), receivedIpEndPoint.Address.ToString(), receivedIpEndPoint.Port, udpData["data"], ID)));
-
+                        if (this._whiteList.IndexOf(receivedIpEndPoint.Address.ToString()) == -1)
+                            boool = false;
                     }
-                    //else console.log("already received");
-                    if (udpData["UDPMRA"] != null)
+                    else if (this._blackListEnabled)
                     {
-                        this._ClassicSend(new { UDPMDRID = ID, UDPMCN = udpData.UDPMCN }, receivedIpEndPoint.Address.ToString(), receivedIpEndPoint.Port);        //Send receipt
+                        if (this._blackList.IndexOf(receivedIpEndPoint.Address.ToString()) > -1)
+                            boool = false;
+                    }
+
+                    if (this._UDPClientConnecting != null && receivedIpEndPoint.Address.ToString() == this._UDPClientConnecting.Address && receivedIpEndPoint.Port.ToString() == this._UDPClientConnecting.ToString() && udpData["UDPMCN"] != "UDPMRCC") boool = false;
+                    if (udpData["UDPMCN"].ToString() == "UDPMRCP" && this._udpServerPeers != null && this._udpServerPeers.Where(a => a.Address == receivedIpEndPoint.Address.ToString()).Where(a => a.Port == receivedIpEndPoint.Port).FirstOrDefault() == null) boool = false;
+
+                    if (boool)
+                    {
+
+                        if (this._receivedIDs.IndexOf(receivedIpEndPoint.Address.ToString() + ":" + receivedIpEndPoint.Port.ToString() + "," + ID) == -1)
+                        {
+                            this._receivedIDs.Add(receivedIpEndPoint.Address.ToString() + ":" + receivedIpEndPoint.Port.ToString() + "," + ID);
+                            if (this._receivedIDs.Count == 999) this._receivedIDs.RemoveAt(0);
+                            this.DispatchEvent(new UDPManagerEvent(UDPManagerEvent.Names.DATA_RECEIVED, new UDPDataInfo(udpData["UDPMCN"].ToString(), receivedIpEndPoint.Address.ToString(), receivedIpEndPoint.Port, udpData["data"], ID)));
+
+                        }
+                        //else console.log("already received");
+                        if (udpData["UDPMRA"] != null)
+                        {
+                            this._ClassicSend(new { UDPMDRID = ID, UDPMCN = udpData["UDPMCN"] }, receivedIpEndPoint.Address.ToString(), receivedIpEndPoint.Port);        //Send receipt
+                        }
                     }
                 }
-            }
-            else if (udpData["UDPMDRID"] != null && udpData["UDPMCN"] != null)
-            {
+                else if (udpData["UDPMDRID"] != null && udpData["UDPMCN"] != null)
+                {
+                    ID = int.Parse(udpData["UDPMDRID"].ToString());
+                    string cn = udpData["UDPMCN"].ToString();
 
-                ID = udpData["UDPMDRID"];
-                string cn = udpData["UDPMCN"].ToString();
+                    UDPChannel channel;
+                    if (udpData["UDPMCN"].ToString() == UDPManager._UDPMRCP)
+                        channel = _pingChannel;
+                    else if (udpData["UDPMCN"].ToString() == UDPManager._UDPMRCC)
+                        channel = _connectionChannel;
+                    else if (udpData["UDPMCN"].ToString().Length >= 8 && udpData["UDPMCN"].ToString().Substring(0, 8) == UDPManager._UDPMRCP + ":")
+                        channel = this._GetHiddenClientPingChannelByID(udpData["UDPMCN"].ToString().Split(':')[1]);
+                    else
+                        channel = this.GetChannelByName(udpData["UDPMCN"].ToString());
 
-                UDPChannel channel;
-                if (udpData["UDPMCN"].ToString() == UDPManager._UDPMRCP)
-                    channel = _pingChannel;
-                else if (udpData["UDPMCN"].ToString() == UDPManager._UDPMRCC)
-                    channel = _connectionChannel;
-                else if (udpData["UDPMCN"].ToString().Length >= 8 && udpData["UDPMCN"].ToString().Substring(0, 8) == UDPManager._UDPMRCP + ":")
-                    channel = this._GetHiddenClientPingChannelByID(udpData["UDPMCN"].ToString().Split(':')[1]);
+                    if (channel != null) channel._GetReceipt(ID);
+                }
                 else
-                    channel = this.GetChannelByName(udpData["UDPMCN"].ToString());
+                {
 
-                if (channel != null) channel._GetReceipt(ID);
+                    this.DispatchEvent(new UDPClassicMessageEvent(UDPClassicMessageEvent.Names.MESSAGE, receivedString, receivedIpEndPoint));
+                }
             }
-            else
-            {
-
-                this.DispatchEvent(new UDPClassicMessageEvent(UDPClassicMessageEvent.Names.MESSAGE, receivedString, receivedIpEndPoint));
-            }
-
-
         }
-
-
 
         internal void _AddHiddenClientPingChannel(int peerID)
         { //SERVERSIDE

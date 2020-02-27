@@ -12,6 +12,7 @@
     /// <item>SERVER_SENT_DATA</item> <description> - Dispatched when the server has sent data to the instance </description>
     /// </list>
     /// </summary>
+    #pragma warning disable 108
     public class UDPClientEvent : UDPManagerEvent
     {
         /// <summary>

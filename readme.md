@@ -5,6 +5,9 @@
 ## Sources
 [https://github.com/kevincastejon/cs-udp-manager](https://github.com/kevincastejon/cs-udp-manager)
 
+## Nuget package
+[https://www.nuget.org/packages/UDPManager/](https://www.nuget.org/packages/UDPManager/)
+
 ## Documentation
 [https://github.com/kevincastejon/cs-udp-manager/tree/master/Documentation/html](https://github.com/kevincastejon/cs-udp-manager/tree/master/Documentation/html)
 

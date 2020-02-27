@@ -18,6 +18,7 @@
         /// <summary>
         /// /// An enum containing all the names of the UDPManager events
         /// </summary>
+        #pragma warning disable 108
         public enum Names { CLIENT_CONNECTED, CLIENT_RECONNECTED, CLIENT_PONG, CLIENT_TIMED_OUT, CLIENT_SENT_DATA };
 
         private UDPPeer _udpPeer;
